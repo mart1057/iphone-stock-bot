@@ -24,6 +24,35 @@ const channel = (
 });
 
 describe('ChannelDispatcher', () => {
+  it.each(['notifyRateLimited', 'notifyRecovered'] as const)(
+    'excludes Telegram from %s while preserving other channels',
+    async (method) => {
+      const line = channel('line');
+      const telegram = channel('telegram');
+      const discord = channel('discord');
+      const service = new NotificationService(new ChannelDispatcher([line, telegram, discord]));
+
+      await service[method]({
+        cooldownMs: 120_000,
+        until: new Date(),
+        consecutiveFailures: 2,
+        escalated: false,
+      });
+
+      expect(telegram.send).not.toHaveBeenCalled();
+      expect(line.send).toHaveBeenCalledTimes(1);
+      expect(discord.send).toHaveBeenCalledTimes(1);
+    },
+  );
+
+  it('silently skips system notices when only Telegram is configured', async () => {
+    const telegram = channel('telegram');
+    const result = await new ChannelDispatcher([telegram]).push({ ...message, kind: 'system' });
+
+    expect(telegram.send).not.toHaveBeenCalled();
+    expect(result).toEqual({ success: true, messageId: null, results: [] });
+  });
+
   it('fans one message out to every configured channel', async () => {
     const line = channel('line');
     const telegram = channel('telegram');

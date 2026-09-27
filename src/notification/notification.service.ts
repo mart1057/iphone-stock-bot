@@ -150,6 +150,7 @@ export class NotificationService {
     this.lastSystemAlertAt = now;
 
     const result = await this.channels.push({
+      kind: 'system',
       flex: buildSystemMessage(title, headline, finalRows, tone),
       text: buildSystemPlainText(title, headline, finalRows),
     });

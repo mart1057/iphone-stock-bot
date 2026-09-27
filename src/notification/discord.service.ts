@@ -6,6 +6,7 @@ import { withDivider } from './text.decorate.js';
 
 /// Discord rejects anything longer than this.
 const MAX_CONTENT_LENGTH = 2000;
+const STOCK_REPEAT_DELAY_MS = 3000;
 
 class DiscordApiError extends Error {
   constructor(
@@ -42,6 +43,21 @@ export class DiscordNotificationService implements NotificationChannel {
     const results = await Promise.all(
       env.discordWebhookUrls.map((url) => this.sendTo(url, withDivider(message.text), retryKey)),
     );
+
+    if (message.repeatDiscord && results.some((result) => result.success)) {
+      await new Promise((resolve) => setTimeout(resolve, STOCK_REPEAT_DELAY_MS));
+      await Promise.all(
+        env.discordWebhookUrls.map(async (url, index) => {
+          if (!results[index]?.success) return;
+          const repeat = await this.sendTo(
+            url,
+            `🔔 แจ้งเตือนซ้ำ: มีสต๊อกแล้ว\n${withDivider(message.text)}`,
+            retryKey,
+          );
+          if (!repeat.success) logger.warn('Discord stock reminder failed', repeat.error);
+        }),
+      );
+    }
 
     const failed = results.filter((result) => !result.success);
     return {

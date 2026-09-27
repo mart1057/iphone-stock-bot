@@ -262,30 +262,21 @@ export const buildPlainText = (transitions: readonly StockTransition[]): string 
     return [
       head,
       '',
-      `📱 ${stock.model}`,
-      '',
-      '🎨 สี',
-      stock.colorTh,
-      '',
-      '💾 ความจุ',
-      stock.storage,
-      '',
-      '📍 สาขา',
-      stock.storeName,
-      '',
-      '🟢 สถานะ',
-      'พร้อมจำหน่าย',
-      '',
-      '⏰ ตรวจพบ',
-      formatThaiDateTime(stock.checkedAt),
+      `🎨 สี: ${stock.colorTh}`,
+      `💾 ความจุ: ${stock.storage}`,
+      `📍 สาขา: ${stock.storeName}`,
+      `🟢 สถานะ: พร้อมจำหน่าย`,
+      `⏰ ตรวจพบ: ${formatThaiDateTime(stock.checkedAt)}`,
     ].join('\n');
   }
 
+  // Apple has several physical stores, so - unlike True's single online
+  // channel - the branch is not redundant and stays on every row.
   const items = transitions
-    .map((t, i) => `${i + 1}.\n${t.stock.colorTh}\n${t.stock.storage}\n${t.stock.storeName}`)
-    .join('\n\n');
+    .map((t, i) => `${i + 1}. ${t.stock.colorTh} ${t.stock.storage} — ${t.stock.storeName}`)
+    .join('\n');
 
-  return `${head}\n\n🟢 พบสินค้า ${transitions.length} รายการ\n\n${items}`;
+  return [head, '', `🟢 พบสินค้า ${transitions.length} รายการ`, '', items].join('\n');
 };
 
 /// Plain-text twin of `buildSystemMessage`, for Telegram / Discord.

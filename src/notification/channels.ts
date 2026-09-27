@@ -80,8 +80,16 @@ export class ChannelDispatcher {
       return { success: false, messageId: null, error, results: [] };
     }
 
+    const recipients = active.filter(
+      (channel) => !(message.kind === 'system' && channel.name === 'telegram'),
+    );
+    // Telegram-only setups intentionally have no recipient for system notices.
+    if (recipients.length === 0) {
+      return { success: true, messageId: null, results: [] };
+    }
+
     const results = await Promise.all(
-      active.map((channel) =>
+      recipients.map((channel) =>
         channel.send(message, retryKey).catch(
           (error: unknown): ChannelResult => ({
             channel: channel.name,

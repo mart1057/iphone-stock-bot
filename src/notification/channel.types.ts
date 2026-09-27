@@ -8,10 +8,15 @@ import type { FlexMessage } from './line.flex.js';
  * understands instead of re-deriving the content.
  */
 export interface OutboundMessage {
+  /// Automatic system notices are excluded from Telegram.
+  kind?: 'stock' | 'system';
   /// Rich rendering, used by LINE.
   flex: FlexMessage;
   /// Plain-text rendering, used by Telegram / Discord and by logs.
   text: string;
+  /// When true, Discord gets a second reminder a few seconds after the first
+  /// - the other channels still send exactly once.
+  repeatDiscord?: boolean;
 }
 
 export interface ChannelResult {

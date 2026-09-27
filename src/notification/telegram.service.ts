@@ -2,7 +2,6 @@ import { env, isTelegramConfigured } from '../config/env.js';
 import { logger } from '../utils/logger.js';
 import { withRetry } from '../utils/retry.js';
 import type { ChannelResult, NotificationChannel, OutboundMessage } from './channel.types.js';
-import { withDivider } from './text.decorate.js';
 
 /// Telegram rejects anything longer than this.
 const MAX_TEXT_LENGTH = 4096;
@@ -40,7 +39,7 @@ export class TelegramNotificationService implements NotificationChannel {
     }
 
     const results = await Promise.all(
-      env.telegramChatIds.map((chatId) => this.sendTo(chatId, withDivider(message.text), retryKey)),
+      env.telegramChatIds.map((chatId) => this.sendTo(chatId, message.text, retryKey)),
     );
 
     const failed = results.filter((result) => !result.success);
