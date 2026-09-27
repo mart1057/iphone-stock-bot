@@ -1,0 +1,58 @@
+/**
+ * The single rule that guards LINE from spam:
+ *
+ *     previous.available === false && current === AVAILABLE   -> notify
+ *
+ * Everything else is silent. Notably:
+ *   - first observation (empty DB / new variant / new store) never notifies,
+ *   - UNKNOWN never notifies and never overwrites the last known answer,
+ *     so an Apple outage cannot manufacture a false "back in stock" edge,
+ *   - AVAILABLE -> AVAILABLE on every 30s tick stays silent,
+ *   - AVAILABLE -> UNAVAILABLE is recorded but not pushed.
+ */
+export const detectChange = (previous, current) => {
+    const currentStatus = current.status;
+    const previousStatus = previous?.status ?? 'UNKNOWN';
+    if (currentStatus === 'UNKNOWN') {
+        return {
+            shouldNotify: false,
+            shouldRecordHistory: previousStatus !== 'UNKNOWN',
+            shouldUpdateAvailable: false,
+            previousStatus,
+            currentStatus,
+            reason: 'unknown-observation',
+        };
+    }
+    if (previous === null) {
+        // Seed the baseline silently - this is what makes the first run quiet.
+        return {
+            shouldNotify: false,
+            shouldRecordHistory: true,
+            shouldUpdateAvailable: true,
+            previousStatus,
+            currentStatus,
+            reason: 'first-observation',
+        };
+    }
+    if (currentStatus === 'AVAILABLE') {
+        const becameAvailable = previous.available === false;
+        return {
+            shouldNotify: becameAvailable,
+            shouldRecordHistory: becameAvailable,
+            shouldUpdateAvailable: true,
+            previousStatus,
+            currentStatus,
+            reason: becameAvailable ? 'became-available' : 'unchanged',
+        };
+    }
+    const becameUnavailable = previous.available === true;
+    return {
+        shouldNotify: false,
+        shouldRecordHistory: becameUnavailable,
+        shouldUpdateAvailable: true,
+        previousStatus,
+        currentStatus,
+        reason: becameUnavailable ? 'became-unavailable' : 'unchanged',
+    };
+};
+//# sourceMappingURL=stock.detector.js.map
