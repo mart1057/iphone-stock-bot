@@ -25,7 +25,7 @@ const channel = (
 
 describe('ChannelDispatcher', () => {
   it.each(['notifyRateLimited', 'notifyRecovered'] as const)(
-    'excludes Telegram from %s while preserving other channels',
+    'excludes LINE and Telegram from %s while preserving Discord',
     async (method) => {
       const line = channel('line');
       const telegram = channel('telegram');
@@ -40,7 +40,7 @@ describe('ChannelDispatcher', () => {
       });
 
       expect(telegram.send).not.toHaveBeenCalled();
-      expect(line.send).toHaveBeenCalledTimes(1);
+      expect(line.send).not.toHaveBeenCalled();
       expect(discord.send).toHaveBeenCalledTimes(1);
     },
   );
@@ -51,6 +51,29 @@ describe('ChannelDispatcher', () => {
 
     expect(telegram.send).not.toHaveBeenCalled();
     expect(result).toEqual({ success: true, messageId: null, results: [] });
+  });
+
+  it('sends stock once to LINE and preserves reminders on other channels', async () => {
+    const line = channel('line');
+    const telegram = channel('telegram');
+    const discord = channel('discord');
+    const dispatcher = new ChannelDispatcher([line, telegram, discord]);
+    await dispatcher.push(message);
+    await dispatcher.push({ ...message, stockReminder: true });
+    expect(line.send).toHaveBeenCalledTimes(1);
+    expect(telegram.send).toHaveBeenCalledTimes(2);
+    expect(discord.send).toHaveBeenCalledTimes(2);
+  });
+
+  it('silently skips LINE-only reminders and system notices', async () => {
+    const line = channel('line');
+    const dispatcher = new ChannelDispatcher([line]);
+    for (const extra of [{ stockReminder: true }, { kind: 'system' as const }]) {
+      expect(await dispatcher.push({ ...message, ...extra })).toEqual({
+        success: true, messageId: null, results: [],
+      });
+    }
+    expect(line.send).not.toHaveBeenCalled();
   });
 
   it('fans one message out to every configured channel', async () => {

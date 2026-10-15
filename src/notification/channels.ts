@@ -81,9 +81,11 @@ export class ChannelDispatcher {
     }
 
     const recipients = active.filter(
-      (channel) => !(message.kind === 'system' && channel.name === 'telegram'),
+      (channel) =>
+        !(message.kind === 'system' && ['line', 'telegram'].includes(channel.name)) &&
+        !(message.stockReminder && channel.name === 'line'),
     );
-    // Telegram-only setups intentionally have no recipient for system notices.
+    // Some messages intentionally have no eligible recipient.
     if (recipients.length === 0) {
       return { success: true, messageId: null, results: [] };
     }

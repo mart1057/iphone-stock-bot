@@ -168,7 +168,9 @@ describe('NotificationService', () => {
     expect(pause).toHaveBeenCalledTimes(1);
     expect(pause).toHaveBeenCalledWith(3000);
     expect(line.push.mock.calls[0]![1]).not.toBe(line.push.mock.calls[1]![1]);
-    expect(line.push.mock.calls[0]![0]).toEqual(line.push.mock.calls[1]![0]);
+    expect(line.push.mock.calls[1]![0]).toEqual({
+      ...line.push.mock.calls[0]![0], stockReminder: true,
+    });
     expect(repo.logNotification).toHaveBeenCalledTimes(6);
   });
 

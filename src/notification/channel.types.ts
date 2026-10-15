@@ -8,8 +8,10 @@ import type { FlexMessage } from './line.flex.js';
  * understands instead of re-deriving the content.
  */
 export interface OutboundMessage {
-  /// Automatic system notices are excluded from Telegram.
+  /// Automatic system notices are excluded from LINE and Telegram.
   kind?: 'stock' | 'system';
+  /// Intentional second stock copy; LINE skips this reminder.
+  stockReminder?: boolean;
   /// Rich rendering, used by LINE.
   flex: FlexMessage;
   /// Plain-text rendering, used by Telegram / Discord and by logs.

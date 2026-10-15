@@ -28,7 +28,8 @@ export class NotificationService {
   ) {}
 
   /**
-   * Sends each restock alert twice, three seconds apart. Each copy contains
+   * Sends restock alerts once to LINE and twice to other channels, three
+   * seconds apart. Each copy contains
    * every new-in-stock item and gets its own delivery log and retry key.
    */
   async notify(result: StockCheckResult): Promise<void> {
@@ -58,10 +59,12 @@ export class NotificationService {
     for (let copy = 1; copy <= 2; copy += 1) {
       if (copy === 2) await this.pause(3000);
       logger.info(`Sending stock alert copy ${copy}/2`);
-      // Each intentional copy needs a new key; transport retries reuse it.
-      // Reusing the first key here would make LINE deduplicate the reminder.
+      // Transport retries reuse the key; LINE skips the intentional reminder.
       try {
-        const pushResult = await this.channels.push(message, crypto.randomUUID());
+        const pushResult = await this.channels.push(
+          copy === 2 ? { ...message, stockReminder: true } : message,
+          crypto.randomUUID(),
+        );
         if (!pushResult.success) {
           logger.error('Stock alert delivered to no channel', pushResult.error);
         }
